@@ -1,4 +1,5 @@
 %% Diffuse optics Green's function for an infinite medium, computed in a rectangular slab
+load('NeuroDOT_Data_Sample_CCW1.mat'); % data, info, flags
 
 mua = .0192; % flags.op.mua_gray=[0.0180,0.0192];
 musp = 0.6726; % flags.op.musp_gray=[0.8359,0.6726];
@@ -7,7 +8,8 @@ D = 1/(3*(mua+musp));
 mu_eff = sqrt(mua/D); 
 
 % Define bounds on medium
-xBnds = [-30 30]; yBnds = [-45 45]; zBnds = [1 30];  
+% xBnds = [-30 30]; yBnds = [-45 45]; zBnds = [1 30];  
+xBnds = [-75 75]; yBnds = [-45 45]; zBnds = [1 80];  
 mmX = 2; mmY = 2; mmZ = 2; 
 
 [Y X Z] = meshgrid(yBnds(1):mmY:yBnds(2), xBnds(1):mmX:xBnds(2), zBnds(1):mmZ:zBnds(2)); % generate coordinates for slab 
@@ -18,6 +20,8 @@ nX = size(X,1); nY = size(X,2); nZ = size(X,3); % volume is nX x nY x nZ voxels
 
 srcPos = [0 0 0; 0 0 1]; % source position, in 3D coordinates 
 detPos = [2 2 2; 3 3 3; 4 4 4];
+detPos = [info.optodes.dpos3(:,1),info.optodes.dpos3(:,2),info.optodes.dpos3(:,3)];
+srcPos = [info.optodes.spos3(:,1),info.optodes.spos3(:,2),info.optodes.spos3(:,3)];
 
 
 r = pdist2(srcPos,voxCrd); % distance from source to each voxel
@@ -37,6 +41,17 @@ A = GsAnalytic .* GsDet;
 A = reshape(A, size(A, 1) * size(A, 2), []);
 Gs = reshape(Gs, size(Gs, 1) * size(Gs, 2), []);
 A = A ./ Gs;
+
+perturbations = zeros(size(voxCrd, 1), 1);
+perturbations(1) = 1;
+
+measurements = A * perturbations;
+
+tmp = reshape(sum(GsAnalytic, 1), nX, nY, nZ); % reshape as 3D volume
+figure, sliceViewer(tmp,'Colormap',hot(256)); % simple viewer
+
+figure, imagesc(log(A)), colorbar;
+figure, plot(1:length(measurements), measurements);
 
 % A = GsAnalytic * GsDet;
 
