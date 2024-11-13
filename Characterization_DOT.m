@@ -1,4 +1,6 @@
 close all
+load("hrf_DOT3.mat")
+load("NeuroDOT_Data_Sample_CCW1.mat")
 %% light fall-offs
 subplot(1,2,1)
 semilogy(data(info.pairs.r3d < 30,:)')
@@ -10,6 +12,7 @@ semilogy(info.pairs.r3d,mean(data,2),'.')
 title("Light Falloff")
 xlabel("source-detector distance, mm")
 ylabel("Mean Signal Intensity")
+
 %% Diffuse optics Green's function for an infinite medium, computed in a rectangular slab
 
 mua = .0192; % flags.op.mua_gray=[0.0180,0.0192];
@@ -18,8 +21,9 @@ nu = 1.4;
 D = 1/(3*(mua+musp)); % diffusion coefficient
 mu_eff = sqrt(mua/D); % effective attenuation coefficien
 
+
 % Define bounds on medium
-xBnds = [-60 60]; yBnds = [-80 80]; zBnds = [1 30];  
+xBnds = [-30 30]; yBnds = [-45 45]; zBnds = [1 30];  
 mmX = 2; mmY = 2; mmZ = 2; 
 
 [Y X Z] = meshgrid(yBnds(1):mmY:yBnds(2), xBnds(1):mmX:xBnds(2), zBnds(1):mmZ:zBnds(2)); % generate coordinates for slab 
@@ -33,7 +37,6 @@ numSources = 10;
 numDetectors = 20;
 sourceSpacing = 2; % distance between sources in mm
 detectorSpacing = 5; % distance between detectors in mm
-
 
 % placing sources along the x-axis
 srcPos = [ (1:numSources)' * sourceSpacing, zeros(numSources, 1), zeros(numSources, 1) ];
@@ -83,6 +86,13 @@ srcPos =info.optodes.spos3;
 detPos =info.optodes.dpos3;
 
 
+% volume viewer
+% time course move that in time display all the measurement to show
+% periodicity
+% inverting A to esimate x
+% regularized sudo inverse (underdetermined with the measurement)
+% thresh hold 25% to 20% of the max
+
 %% 
 
 r = pdist2(srcPos, voxCrd); % distance from source to each voxel
@@ -91,26 +101,37 @@ GsAnalytic = 1./(4*pi*D*r).*exp(-mu_eff*r); % Green's function, source to voxel
 rdet = pdist2(voxCrd, detPos);
 GsDet = 1./(4*pi*D*rdet).*exp(-mu_eff*rdet); % Green's function, voxel to detector
 
-r2 = pdist2(srcPos, detPos);
+r2 = pdist2(detPos,srcPos );
 Gs = 1./(4*pi*D*r2).*exp(-mu_eff*r2);
 
-GsAnalytic = reshape(GsAnalytic, size(GsAnalytic, 1), 1, []);
-GsDet = reshape(GsDet, 1, size(GsDet, 2), []);
+nsrc =length(srcPos);
+ndet =length(detPos);
+A = [];
+A_tmp =[];
+for j = 1: ndet
+    for i = 1:nsrc
+        A_tmp = GsAnalytic(i,:).* GsDet(:,j)';
+        A = [A; A_tmp];
+    end
+end
 
-A = GsAnalytic .* GsDet;
-A = reshape(A, size(A, 1) * size(A, 2), []);
 Gs = reshape(Gs, size(Gs, 1) * size(Gs, 2), []);
 A = A ./ Gs;
+
+
 %% 
 
 A_sum = sum(A,1);
 
-tmp = reshape(A_sum,nX,nY,nZ); % reshape as 3D volume
+tmp = reshape(A(100,:),nX,nY,nZ); % reshape as 3D volume
+
 
 figure, sliceViewer(log10(tmp),'Colormap',hot(256)); % simple viewer, lo
 title(sprintf('Source Positions: [%d, %d, %d; %d, %d, %d]', ...
     srcPos(1,1), srcPos(1,2), srcPos(1,3), srcPos(2,1), srcPos(2,2), srcPos(2,3)));
 colorbar;
+
+figure, imagesc(squeeze(tmp(:,:,10)));
 
 %% 
 perturbations = zeros(size(voxCrd, 1), 1);
@@ -119,7 +140,8 @@ perturbations(1) = 1;
 measurements = A * perturbations;
 
 % Compute the mean intensity for each source-detector pair in A
-meanIntensity = mean(A, 2); % mean across all voxels for each source-detector pair
+meanIntensity = mean(Gs, 2); % mean across all voxels for each source-detector pair
+% back ground light fall-offs
 
 % Extract source-detector distances from r2
 sourceDetectorDistances = r2(:); % flatten the matrix to a vector

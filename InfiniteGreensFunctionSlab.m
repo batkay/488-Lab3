@@ -54,6 +54,13 @@ Gs = reshape(Gs, size(Gs, 1) * size(Gs, 2), []);
 A = A ./ Gs;
 A = A(1,:)+A(2,:);
 
+% show A matrix in one voxel
+% change the source detector pairs
+
+%  brain activities: change in orgniization of area: changes signales
+%  green functions indicate the change in absorbtion relative to background
+%  Coupleing coeffeicent: vairance of the sources 
+
 tmp = reshape(A,nX,nY,nZ); % reshape as 3D volume
 
 figure, sliceViewer(log10(tmp),'Colormap',hot(256)); % simple viewer, lo
