@@ -123,7 +123,7 @@ A = A ./ Gs;
 
 A_sum = sum(A,1);
 
-tmp = reshape(A(100,:),nX,nY,nZ); % reshape as 3D volume
+tmp = reshape(A(600,:),nX,nY,nZ); % reshape as 3D volume
 
 
 figure, sliceViewer(log10(tmp),'Colormap',hot(256)); % simple viewer, lo
@@ -131,7 +131,7 @@ title(sprintf('Source Positions: [%d, %d, %d; %d, %d, %d]', ...
     srcPos(1,1), srcPos(1,2), srcPos(1,3), srcPos(2,1), srcPos(2,2), srcPos(2,3)));
 colorbar;
 
-figure, imagesc(squeeze(tmp(:,:,10)));
+figure, imagesc(squeeze(tmp(:,:,1)));
 
 %% 
 perturbations = zeros(size(voxCrd, 1), 1);

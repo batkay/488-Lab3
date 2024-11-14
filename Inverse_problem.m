@@ -57,7 +57,7 @@ A_reg = A'*(A*A'+lambda*eye(size(A,1)))^-1;
 x_est = A_reg *y;
 
 reconstrution = reshape(x_est,nX,nY,nZ);
-
+original = reshape(x,nX,nY,nZ);
 figure;
 plot(x');
 hold on
@@ -69,9 +69,45 @@ legend("x","x_estimate");
 figure;
 imagesc(squeeze(reconstrution(:,:,15)));
 colorbar;
+figure;
+imagesc(squeeze(original(:,:,15)));
+colorbar;
+
 
 
 %% PSF
 
+freq = 1; %hz
+x = zeros(size(A,2),1);
+positions = [1, nX/2, nX];
+x(1)=1;
+y = A*x;
+% Compute the singular value decomposition to get the largest singular value of A
+[U, S, V] = svd(A, 'econ');
+largest_singular_value = S(1,1);  % The largest singular value is the first element in S
+
+% Set lambda as a fraction of the largest singular value
+lambda = largest_singular_value / 100;  % This sets lambda to 1% of the largest singular value
+
+
+A_reg = A'*(A*A'+lambda*eye(size(A,1)))^-1;
+x_est = A_reg *y;
+
+reconstrution = reshape(x_est,nX,nY,nZ);
+original = reshape(x,nX,nY,nZ);
+figure;
+plot(x');
+hold on
+plot(x_est');
+ylabel("intentsity changes");
+xlabel("tissue structures");
+legend("x","x_estimate");
+
+figure;
+imagesc(squeeze(reconstrution(:,:,1)));
+colorbar;
+figure;
+imagesc(squeeze(original(:,:,1)));
+colorbar;
 
 

@@ -52,17 +52,36 @@ A = A ./ Gs;
 freq = 1; %hz
 x = ones(size(A,2),1);
 y = A*x;
-lambda = max(A,[],"all")/400;
+lambda = 2; %max(A,[],"all")/400;
 A_reg = A'*(A*A'+lambda*eye(size(A,1)))^-1;
 x_est = A_reg *y;
 
+reconstrution = reshape(x_est,nX,nY,nZ);
+original = reshape(x,nX,nY,nZ);
 figure;
 plot(x');
 hold on
 plot(x_est');
-ylabel("intentsities");
-xlabel("tissue structure");
-legend("x","x_estimate")
+ylabel("intentsity changes");
+xlabel("tissue structures");
+legend("x","x_estimate");
+
+figure;
+imagesc(squeeze(reconstrution(:,:,15)));
+colorbar;
+figure;
+imagesc(squeeze(original(:,:,15)));
+colorbar;
 
 
+
+%% PSF
+
+freq = 1; %hz
+x = zeros(size(A,2),1);
+x(1)=1;
+y = A*x;
+lambda = 2; %max(A,[],"all")/400;
+A_reg = A'*(A*A'+lambda*eye(size(A,1)))^-1;
+x_est = A_reg *y;
 
