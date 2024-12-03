@@ -18,10 +18,12 @@ voxCrd = double([X(:) Y(:) Z(:)]); % coordinates (mm) for each voxel, reshaped a
 
 nX = size(X,1); nY = size(X,2); nZ = size(X,3); % volume is nX x nY x nZ voxels
 
-srcPos = [0 0 0; 0 0 1]; % source position, in 3D coordinates 
-detPos = [2 2 2; 3 3 3; 4 4 4];
-detPos = [info.optodes.dpos3(:,1),info.optodes.dpos3(:,2),info.optodes.dpos3(:,3)];
-srcPos = [info.optodes.spos3(:,1),info.optodes.spos3(:,2),info.optodes.spos3(:,3)];
+% srcPos = [0 0 0; 0 0 1]; % source position, in 3D coordinates 
+% detPos = [2 2 2; 3 3 3; 4 4 4];
+% detPos = [info.optodes.dpos3(:,1),info.optodes.dpos3(:,2),info.optodes.dpos3(:,3)];
+% srcPos = [info.optodes.spos3(:,1),info.optodes.spos3(:,2),info.optodes.spos3(:,3)];
+srcPos =info.optodes.spos3;
+detPos =info.optodes.dpos3;
 
 
 r = pdist2(srcPos,voxCrd); % distance from source to each voxel
@@ -34,11 +36,26 @@ GsDet = 1./(4*pi*D*rdet).*exp(-mu_eff*rdet); % Green's function, each voxel
 r2 = pdist2(srcPos, detPos);
 Gs = 1./(4*pi*D*r2).*exp(-mu_eff*r2);
 
-GsAnalytic = reshape(GsAnalytic, size(GsAnalytic, 1), 1, []);
-GsDet = reshape(GsDet, 1, size(GsDet, 2), []);
+% GsAnalytic = reshape(GsAnalytic, size(GsAnalytic, 1), 1, []);
+% GsDet = reshape(GsDet, 1, size(GsDet, 2), []);
 
-A = GsAnalytic .* GsDet;
-A = reshape(A, size(A, 1) * size(A, 2), []);
+% A = GsAnalytic .* GsDet;
+% A = reshape(A, size(A, 1) * size(A, 2), []);
+% Gs = reshape(Gs, size(Gs, 1) * size(Gs, 2), []);
+% A = A ./ Gs;
+
+nsrc =length(srcPos);
+ndet =length(detPos);
+A = [];
+A_tmp =[];
+
+for j = 1: ndet
+    for i = 1:nsrc
+        A_tmp = GsAnalytic(i,:).* GsDet(:,j)';
+        A = [A; A_tmp];
+    end
+end
+
 Gs = reshape(Gs, size(Gs, 1) * size(Gs, 2), []);
 A = A ./ Gs;
 
@@ -47,11 +64,50 @@ perturbations(1) = 1;
 
 measurements = A * perturbations;
 
-tmp = reshape(sum(GsAnalytic, 1), nX, nY, nZ); % reshape as 3D volume
-figure, sliceViewer(tmp,'Colormap',hot(256)); % simple viewer
+figure, plot(1:length(A(1, :)), A(1, :));
 
-figure, imagesc(log(A)), colorbar;
-figure, plot(1:length(measurements), measurements);
+% figure;
+% griddata(voxCrd(:, 1), voxCrd(:, 2), voxCrd(:, 3), A(1, :)', X, Y, Z);
+% 
+
+%% plotting
+figure;
+tmp = reshape (A(200, :), nX, nY, nZ);
+sliceViewer(log10(tmp), 'Colormap', hot(256));
+
+%% temporal evolution though time
+x = ones(size(A,2),1);
+x(1) = 1;
+y = A*x;
+lambda = 2; %max(A,[],"all")/400;
+A_reg = A'*(A*A'+lambda*eye(size(A,1)))^-1;
+x_est = A_reg *y;
+
+reconstrution = reshape(x_est,nX,nY,nZ);
+
+figure;
+plot(x');
+hold on
+plot(x_est');
+ylabel("intentsity changes");
+xlabel("tissue structures");
+legend("x","x_estimate");
+
+reconstrutionOriginal = reshape(x,nX,nY,nZ);
+
+figure;
+sliceViewer(reconstrutionOriginal);
+
+figure;
+sliceViewer(reconstrution);
+colorbar;
+
+figure;
+plot(1:length(y), y);
+
+% 
+% figure, imagesc(log(A)), colorbar;
+% figure, plot(1:length(measurements), measurements);
 
 % A = GsAnalytic * GsDet;
 
