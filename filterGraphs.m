@@ -6,12 +6,13 @@
 % filtered(abs(filtered) > 0.02) = sign(filtered(abs(filtered) > 0.02)) * 0.02;
 % filtered(abs(filtered) < 0.002) = 0.00;
 
+% figure;
+% subplot(2, 2, 1);
+% imagesc(y), caxis([-.2, .2]); % need to axis limit
 figure;
-subplot(2, 2, 1);
-imagesc(y), caxis([-.2, .2]); % need to axis limit
 title("y");
 subplot(2, 2, 2);
-imagesc(filtered), caxis([-.2, .2]);
+imagesc(filtered), caxis([-.1, .1]);
 title("Filter")
 subplot(2, 2, 3);
 plot(1:length(y), y);
